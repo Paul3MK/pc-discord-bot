@@ -65,7 +65,7 @@ async def get_songs(ctx):
     getNextSunday = re.get('https://api.planningcenteronline.com/services/v2/service_types/1145804/plans/'+idUpcomingSundays[0], auth=HTTPBasicAuth(username, password))
     d_getNextSunday = json.loads(getNextSunday.text)
 
-    # get songs for any Sunday
+    # get songs for given Sunday
     sundaySongs = []
     getSundaySongs = re.get('https://api.planningcenteronline.com/services/v2/service_types/1145804/plans/'+idUpcomingSundays[0]+'/items', auth=HTTPBasicAuth(username, password))
     d_getSundaySongs = json.loads(getSundaySongs.text)
@@ -75,16 +75,15 @@ async def get_songs(ctx):
             sundaySongs.append(i)
     
     # respond to song query for a given Sunday
-    songQueryResponse = "{} songs will be played on Sunday {}.\nFirst song is {} in the key of {}.\nSecond song is {} in the key of {}\nThird song is {} in the key of {}.".format(
+    songQueryResponse = "{} songs will be played on Sunday {}.".format(
         len(sundaySongs),
-        d_getNextSunday['data']['attributes']['dates'],
-        d_getSundaySongs['data'][sundaySongs[0]]['attributes']['title'],
-        d_getSundaySongs['data'][sundaySongs[0]]['attributes']['key_name'],
-        d_getSundaySongs['data'][sundaySongs[1]]['attributes']['title'],
-        d_getSundaySongs['data'][sundaySongs[1]]['attributes']['key_name'],
-        d_getSundaySongs['data'][sundaySongs[2]]['attributes']['title'],
-        d_getSundaySongs['data'][sundaySongs[2]]['attributes']['key_name'],
-    )
+        d_getNextSunday['data']['attributes']['dates'])
+    for s in range(len(sundaySongs)):
+        songQueryResponse + "\n{}. {} in the key of {}".format(
+            s,
+            d_getSundaySongs['data'][sundaySongs[s]]['attributes']['title'],
+            d_getSundaySongs['data'][sundaySongs[s]]['attributes']['key_name'],
+        )
 
     await ctx.send(songQueryResponse)
 

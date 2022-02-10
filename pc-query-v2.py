@@ -1,4 +1,3 @@
-from tkinter import SW
 import requests as re
 from requests.auth import HTTPBasicAuth
 import json
@@ -30,32 +29,34 @@ sundaySongs = []
 getSundayItems = re.get('https://api.planningcenteronline.com/services/v2/service_types/1145804/plans/'+idUpcomingSundays[0]+'/items', auth=HTTPBasicAuth(username, password))
 d_getSundayItems = json.loads(getSundayItems.text)
 
+# getting song category
+songItem = {
+    
+}
+
 for i in range(len(d_getSundayItems['data'])):
-    if d_getSundayItems['data'][i]['attributes']['item_type'] == 'song':
-        sundaySongs.append(i)
+    if d_getSundayItems['data'][i]['attributes']['item_type'] == 'song' \
+        or d_getSundayItems['data'][i]['attributes']['description'] == 'Worship' \
+        or d_getSundayItems['data'][i]['attributes']['description'] == 'Communion' \
+        or d_getSundayItems['data'][i]['attributes']['description'] == 'Giving': { # YES, this is a huge ORed if statement
+
+        sundaySongs.append(d_getSundayItems['data'][i])
+    }
+        
     
 print(sundaySongs)
 
 # respond to song query for a given Sunday
+songCount = 0
+for item in sundaySongs:
+    if item['attributes']['item_type'] == 'song':
+        songCount += 1
+
 songQueryResponse = "{} songs will be played on Sunday {}.".format(
-    len(sundaySongs),
+    songCount,
     d_getNextSunday['data']['attributes']['dates'])
-
-
-for s in range(len(sundaySongs)):
-    song_position = d_getSundayItems['data'][sundaySongs[s]]['attributes']['sequence']
-    print(song_position)
-
-    if d_getSundayItems['data'][sundaySongs[s]-1]['attributes']['title'] == "Worship":
-        songQueryResponse += "\nWorship" 
-    elif d_getSundayItems['data'][sundaySongs[s]-1]['attributes']['title'] == "Communion":
-        songQueryResponse += "'\nCommunion" 
-    elif d_getSundayItems['data'][sundaySongs[s]-1]['attributes']['title'] == "Giving":
-        songQueryResponse += "\nGiving"
-    else:
-        pass
-
-    songQueryResponse += "\n\t{}. {} in the key of {}".format(
+for s in sundaySongs:
+    songQueryResponse += "\n{}. {} in the key of {}".format(
         s+1,
         d_getSundayItems['data'][sundaySongs[s]]['attributes']['title'],
         d_getSundayItems['data'][sundaySongs[s]]['attributes']['key_name'],
@@ -63,9 +64,9 @@ for s in range(len(sundaySongs)):
 
 print(songQueryResponse)
 
-plan_old = "56678239"
+
 # get all team members, grouped by confirmed and unconfirmed
-getTeamMembers =  re.get('https://api.planningcenteronline.com/services/v2/service_types/1145804/plans/'+plan_old+'/team_members', auth=HTTPBasicAuth(username, password))
+getTeamMembers =  re.get('https://api.planningcenteronline.com/services/v2/service_types/1145804/plans/'+idUpcomingSundays[0]+'/team_members', auth=HTTPBasicAuth(username, password))
 d_getTeamMembers = json.loads(getTeamMembers.text)
 
 confirmedTeamMembers = []
@@ -110,24 +111,3 @@ for i in unconfirmedTeamMembers:
     print("{}. {} - {}".format(i['index'], i['name'], i['team_position']))
 
 # update status for a given team member for a given Sunday
-id_update, status_update = input("Please enter the id and status you wish to update to. \ne.g. 4 c: ").split()
-
-id_update = int(id_update)
-
-allTeamMembers = confirmedTeamMembers + unconfirmedTeamMembers
-print(allTeamMembers)
-for member in allTeamMembers:
-    if member['index'] == id_update:
-        data = """{
-            "id": member['pc_id'],
-            "attributes": {
-                "status": status_update
-            }
-        }"""
-
-        url = "https://api.planningcenteronline.com/services/v2/service_types/1145804/plans/{}/team_members/{}".format(plan_old, member['pc_id'])
-        print(data)
-        print(url)
-        r = re.patch(url, json=data, auth=HTTPBasicAuth(username, password))
-        print(r.status_code)
-
