@@ -1,4 +1,3 @@
-from tkinter import SW
 import requests as re
 from requests.auth import HTTPBasicAuth
 import json
@@ -118,16 +117,18 @@ allTeamMembers = confirmedTeamMembers + unconfirmedTeamMembers
 print(allTeamMembers)
 for member in allTeamMembers:
     if member['index'] == id_update:
-        data = """{
-            "id": member['pc_id'],
-            "attributes": {
-                "status": status_update
-            }
-        }"""
+        data = {}
+        data["id"] = member['pc_id']
+        data["attributes"] = {"status": status_update}
+
+        update = {"data": data}
 
         url = "https://api.planningcenteronline.com/services/v2/service_types/1145804/plans/{}/team_members/{}".format(plan_old, member['pc_id'])
         print(data)
         print(url)
-        r = re.patch(url, json=data, auth=HTTPBasicAuth(username, password))
+        r = re.patch(url, json=update, auth=HTTPBasicAuth(username, password))
+        print(r.request.url)
+        print(r.request.body)
+        print(r.request.headers)
         print(r.status_code)
 
