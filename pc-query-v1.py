@@ -69,6 +69,7 @@ d_getTeamMembers = json.loads(getTeamMembers.text)
 
 confirmedTeamMembers = []
 unconfirmedTeamMembers = []
+declinedTeamMembers = []
 
 
 for i in range(len(d_getTeamMembers['data'])):
@@ -80,18 +81,18 @@ for i in range(len(d_getTeamMembers['data'])):
         "status": ""
 
     }
-    if d_getTeamMembers['data'][i]['attributes']['status'] == 'C':
-        teamMember['pc_id'] = d_getTeamMembers['data'][i]['id']
-        teamMember['name'] = d_getTeamMembers['data'][i]['attributes']['name']
-        teamMember['team_position'] = d_getTeamMembers['data'][i]['attributes']['team_position_name']
-        teamMember['status'] = d_getTeamMembers['data'][i]['attributes']['status']
+
+    teamMember['pc_id'] = d_getTeamMembers['data'][i]['id']
+    teamMember['name'] = d_getTeamMembers['data'][i]['attributes']['name']
+    teamMember['team_position'] = d_getTeamMembers['data'][i]['attributes']['team_position_name']
+    teamMember['status'] = d_getTeamMembers['data'][i]['attributes']['status']
+
+    if d_getTeamMembers['data'][i]['attributes']['status'] == 'C':        
         confirmedTeamMembers.append(teamMember)
     elif d_getTeamMembers['data'][i]['attributes']['status'] == 'U':
-        teamMember['pc_id'] = d_getTeamMembers['data'][i]['id']
-        teamMember['name'] = d_getTeamMembers['data'][i]['attributes']['name']
-        teamMember['team_position'] = d_getTeamMembers['data'][i]['attributes']['team_position_name']
-        teamMember['status'] = d_getTeamMembers['data'][i]['attributes']['status']
         unconfirmedTeamMembers.append(teamMember)
+    elif d_getTeamMembers['data'][i]['attributes']['status'] == 'D':
+        declinedTeamMembers.append(teamMember)
 
 # print out confirmed team members
 print("\nConfirmed team members:")
@@ -113,7 +114,7 @@ id_update, status_update = input("Please enter the id and status you wish to upd
 
 id_update = int(id_update)
 
-allTeamMembers = confirmedTeamMembers + unconfirmedTeamMembers
+allTeamMembers = confirmedTeamMembers + unconfirmedTeamMembers + declinedTeamMembers
 print(allTeamMembers)
 for member in allTeamMembers:
     if member['index'] == id_update:

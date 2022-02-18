@@ -1,0 +1,22 @@
+!upcoming-sundays
+
+!next-sunday-info
+
+!sunday-info 27feb
+
+//not sure about the previous two. They would function as summaries of all team members, song info, plus full runsheet
+
+!next-sunday-team
+
+!sunday-team 27feb
+
+!update-sunday-team 27feb {id} {status-code}
+
+!next-sunday-songs
+
+!sunday-songs 27feb
+
+!all-songs
+
+!get-attachments {songID}
+

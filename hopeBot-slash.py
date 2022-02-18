@@ -2,7 +2,8 @@ import os
 import discord
 from dotenv import load_dotenv
 
-from discord.ext import commands
+#from discord.ext import commands
+import interactions
 
 import requests as re
 from requests.auth import HTTPBasicAuth
@@ -20,7 +21,7 @@ GUILD = os.getenv('DISCORD_GUILD')
 intents = discord.Intents.default()
 intents.members = True
 
-bot = commands.Bot(command_prefix='$', intents=intents)
+bot = interactions.Client(token=TOKEN)
 
 # We'll be issuing requests to our Planning Center account
 
@@ -41,31 +42,31 @@ for x in d_getUpcomingSundays['data']:
 print("Up and running")
 
 # defining bot commands and events
-@bot.event
-async def on_ready():
-    guild = discord.utils.get(bot.guilds, name=GUILD)
+# @bot.event
+# async def on_ready():
+#     guild = discord.utils.get(bot.guilds, name=GUILD)
 
-    print(
-        f'{bot.user} has connected to Discord, to the following guild:\n'
-        f'{guild.name}(id:{guild.id})'
-    )
+#     print(
+#         f'{bot.user} has connected to Discord, to the following guild:\n'
+#         f'{guild.name}(id:{guild.id})'
+#     )
 
-    members = '\n - '.join([member.name for member in guild.members])
-    print(f'Guild Members: \n - {members}')
+#     members = '\n - '.join([member.name for member in guild.members])
+#     print(f'Guild Members: \n - {members}')
 
-@bot.event
-async def on_member_join(member):
-    await member.create_dm()
-    await member.dm_channel.send(
-        f"H i {member.name}, welcome to my Discord server!"
-    )
+# @bot.event
+# async def on_member_join(member):
+#     await member.create_dm()
+#     await member.dm_channel.send(
+#         f"H i {member.name}, welcome to my Discord server!"
+#     )
 
-@bot.command()
-async def test(ctx, arg):
-    await ctx.channel.send(arg)
+# @bot.command(name="test", description="blah blah", scope="863761135793340416")
+# async def test(ctx, arg):
+#     await ctx.channel.send(arg)
 
-@bot.command(name="upcoming-sundays")
-async def upcoming_sundays(ctx):
+@bot.command(name="upcoming-sundays",  description="blah blah", scope="863761135793340416")
+async def upcoming_sundays(ctx: interactions.CommandContext):
     dates = []
     for i in d_getUpcomingSundays["data"]:
         dates.append(i["attributes"]["dates"])
@@ -77,8 +78,8 @@ async def upcoming_sundays(ctx):
     
     await ctx.send(response)
 
-@bot.command(name="next-sunday-info") # not implemented yet
-async def next_sunday_info(ctx):
+@bot.command(name="next-sunday-info",  description="blah blah", scope="863761135793340416") # not implemented ye,  description="blah blah"t
+async def next_sunday_info(ctx: interactions.CommandContext):
     getNextSunday = re.get('https://api.planningcenteronline.com/services/v2/service_types/1145804/plans/'+idUpcomingSundays[0], auth=HTTPBasicAuth(username, password))
     d_getNextSunday = json.loads(getNextSunday.text)
 
@@ -86,8 +87,8 @@ async def next_sunday_info(ctx):
 
     pass
 
-@bot.command(name="next-sunday-team")
-async def next_sunday_team(ctx, date=upcomingSundayList[0]):
+@bot.command(name="next-sunday-team",  description="blah blah", scope="863761135793340416")
+async def next_sunday_team(ctx: interactions.CommandContext, date=upcomingSundayList[0]):
 
     for d in d_getUpcomingSundays['data']:
         date1 = datetime.strptime(d['attributes']['dates'], "%d %B %Y")
@@ -166,8 +167,8 @@ async def next_sunday_team(ctx, date=upcomingSundayList[0]):
     await ctx.send(response)
 
 # include command for getting
-@bot.command(name="get-songs")
-async def get_songs(ctx):
+@bot.command(name="get-songs",  description="blah blah", scope="863761135793340416")
+async def get_songs(ctx: interactions.CommandContext):
     # make request for next Sunday
     getNextSunday = re.get('https://api.planningcenteronline.com/services/v2/service_types/1145804/plans/'+idUpcomingSundays[0], auth=HTTPBasicAuth(username, password))
     d_getNextSunday = json.loads(getNextSunday.text)
@@ -194,8 +195,8 @@ async def get_songs(ctx):
 
     await ctx.send(songQueryResponse)
 
-@bot.command(name="update-sunday-team")
-async def update_sunday_team(ctx, mid: int, status_code):
+@bot.command(name="update-sunday-team",  description="blah blah", scope="863761135793340416")
+async def update_sunday_team(ctx: interactions.CommandContext, mid: int, status_code):
     
     # for d in d_getUpcomingSundays['data']:
     #     date1 = datetime.strptime(d['attributes']['dates'], "%d %B %Y")
@@ -246,13 +247,13 @@ async def update_sunday_team(ctx, mid: int, status_code):
             print(r.status_code)
     await ctx.send(f"Status for {updated_member} updated.")
 
-@update_sunday_team.error
-async def update_sunday_team_error(ctx, error):
-    if isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send("Make sure you put in all the parameters for this command. Send $help command-name-here to get help on a command.")
+# @update_sunday_team.error
+# async def update_sunday_team_error(ctx, error):
+#     if isinstance(error, commands.MissingRequiredArgument):
+#         await ctx.send("Make sure you put in all the parameters for this command. Send $help command-name-here to get help on a command.")
 
 @bot.event
 async def on_command_error(ctx, error):
     await ctx.send(f"{error}; did you type out your command correctly?")
 
-bot.run(TOKEN)
+bot.start()
