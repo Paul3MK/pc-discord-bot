@@ -86,8 +86,8 @@ async def next_sunday_info(ctx):
 
     pass
 
-@bot.command(name="next-sunday-team")
-async def next_sunday_team(ctx, date=upcomingSundayList[0]):
+@bot.command(name="sunday-team", help="Gets the list of team members for a given Sunday. Default is next Sunday.")
+async def sunday_team(ctx, date=upcomingSundayList[0]):
 
     for d in d_getUpcomingSundays['data']:
         date1 = datetime.strptime(d['attributes']['dates'], "%d %B %Y")
@@ -133,7 +133,7 @@ async def next_sunday_team(ctx, date=upcomingSundayList[0]):
     response = ""
 
     # print out confirmed team members
-    response += "\nConfirmed team members:"
+    response += "\n> Confirmed team members:"
 
     confirmedTeamMemberIndex = 1
 
@@ -144,7 +144,7 @@ async def next_sunday_team(ctx, date=upcomingSundayList[0]):
             response += "\n{}. {} - {}".format(i['index'], i['name'], i['team_position'])
         # confirmedTeamMemberIndex+=1
 
-    response += "\n\nUnconfirmed team members:"
+    response += "\n\n> Unconfirmed team members:"
     if len(unconfirmedTeamMembers) < 1:
         response += "\nNone."
     else:
@@ -152,7 +152,7 @@ async def next_sunday_team(ctx, date=upcomingSundayList[0]):
         for i in unconfirmedTeamMembers:
             response += "\n{}. {} - {}".format(i['index'], i['name'], i['team_position'])
 
-    response += "\n\nTeam members that declined:"
+    response += "\n\n> Team members that declined:"
 
     if len(declinedTeamMembers) < 1:
         response += "\nNone."
@@ -182,27 +182,33 @@ async def get_songs(ctx):
             sundaySongs.append(i)
     
     # respond to song query for a given Sunday
-    songQueryResponse = "{} songs will be played on Sunday {}.".format(
+    songQueryResponse = "{} songs will be played during worship on Sunday {}.".format(
         len(sundaySongs),
         d_getNextSunday['data']['attributes']['dates'])
     for s in range(len(sundaySongs)):
-        songQueryResponse + "\n{}. {} in the key of {}".format(
-            s,
+        songQueryResponse += "\n{}. {} in the key of {}".format(
+            s+1,
             d_getSundaySongs['data'][sundaySongs[s]]['attributes']['title'],
             d_getSundaySongs['data'][sundaySongs[s]]['attributes']['key_name'],
         )
 
+    sundayPerformances = []
+     for i in range(len(d_getSundaySongs['data'])):
+        if d_getSundaySongs['data'][i]['attributes']['title'] == 'Giving':
+            sundayPerformances.append(
+ 
+
     await ctx.send(songQueryResponse)
 
 @bot.command(name="update-sunday-team")
-async def update_sunday_team(ctx, mid: int, status_code):
+async def update_sunday_team(ctx, date, mid: int, status_code):
     
-    # for d in d_getUpcomingSundays['data']:
-    #     date1 = datetime.strptime(d['attributes']['dates'], "%d %B %Y")
-    #     date2 = datetime.strptime(date, "%b%d")
+    for d in d_getUpcomingSundays['data']:
+        date1 = datetime.strptime(d['attributes']['dates'], "%d %B %Y")
+        date2 = datetime.strptime(date, "%b%d")
 
-    #     if date1.strftime("%b%d") == date2.strftime("%b%d"):
-    #         idSelectedSunday = d['id']
+        if date1.strftime("%b%d") == date2.strftime("%b%d"):
+            idSelectedSunday = d['id']
 
     getSundayTeam = re.get('https://api.planningcenteronline.com/services/v2/service_types/1145804/plans/'+'56678239'+'/team_members', auth=HTTPBasicAuth(username, password)) # replace the id with idSelectedSunday
     d_getSundayTeam = json.loads(getSundayTeam.text)
