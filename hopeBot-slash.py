@@ -76,7 +76,7 @@ async def upcoming_sundays(ctx: interactions.CommandContext):
     for date in dates:
         response += f"\n{date}"
     
-    await ctx.send(response)
+    await ctx.send("Trying to fetch")
 
 @bot.command(name="next-sunday-info",  description="blah blah", scope="863761135793340416") # not implemented ye,  description="blah blah"t
 async def next_sunday_info(ctx: interactions.CommandContext):
