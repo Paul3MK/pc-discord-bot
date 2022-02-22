@@ -167,14 +167,26 @@ async def sunday_team(ctx, date=upcomingSundayList[0]):
 
 # include command for getting
 @bot.command(name="get-songs")
-async def get_songs(ctx):
+async def get_songs(ctx, date=upcomingSundayList[0]):
+
+    for d in d_getUpcomingSundays['data']:
+        date1 = datetime.strptime(d['attributes']['dates'], "%d %B %Y")
+        if date == upcomingSundayList[0]:
+            date2 = datetime.strptime(date, "%d %B %Y")
+        else:
+            date2 = datetime.strptime(date, "%b%d")
+            
+
+        if date1.strftime("%b%d") == date2.strftime("%b%d"):
+            idSelectedSunday = d['id']
+
     # make request for next Sunday
-    getNextSunday = re.get('https://api.planningcenteronline.com/services/v2/service_types/1145804/plans/'+idUpcomingSundays[0], auth=HTTPBasicAuth(username, password))
+    getNextSunday = re.get('https://api.planningcenteronline.com/services/v2/service_types/1145804/plans/'+idSelectedSunday, auth=HTTPBasicAuth(username, password))
     d_getNextSunday = json.loads(getNextSunday.text)
 
     # get songs for given Sunday
     sundaySongs = []
-    getSundaySongs = re.get('https://api.planningcenteronline.com/services/v2/service_types/1145804/plans/'+idUpcomingSundays[0]+'/items', auth=HTTPBasicAuth(username, password))
+    getSundaySongs = re.get('https://api.planningcenteronline.com/services/v2/service_types/1145804/plans/'+idSelectedSunday+'/items', auth=HTTPBasicAuth(username, password))
     d_getSundaySongs = json.loads(getSundaySongs.text)
 
     for i in range(len(d_getSundaySongs['data'])):
@@ -182,20 +194,25 @@ async def get_songs(ctx):
             sundaySongs.append(i)
     
     # respond to song query for a given Sunday
-    songQueryResponse = "{} songs will be played during worship on Sunday {}.".format(
+    songQueryResponse = "{} songs will be played during worship on Sunday {}.\n> Worship".format(
         len(sundaySongs),
         d_getNextSunday['data']['attributes']['dates'])
     for s in range(len(sundaySongs)):
-        songQueryResponse += "\n{}. {} in the key of {}".format(
+        songQueryResponse += "\n{}. *{}* in the key of {}".format(
             s+1,
             d_getSundaySongs['data'][sundaySongs[s]]['attributes']['title'],
             d_getSundaySongs['data'][sundaySongs[s]]['attributes']['key_name'],
         )
 
     sundayPerformances = []
-     for i in range(len(d_getSundaySongs['data'])):
-        if d_getSundaySongs['data'][i]['attributes']['title'] == 'Giving':
-            sundayPerformances.append(
+    for i in range(len(d_getSundaySongs['data'])):
+        if d_getSundaySongs['data'][i]['attributes']['title'].strip() == "Communion" \
+        or d_getSundaySongs['data'][i]['attributes']['title'].strip() == "Giving":
+            sundayPerformances.append(d_getSundaySongs['data'][i])
+
+    songQueryResponse += "\n\n**Other info**"
+    for perf in sundayPerformances:
+        songQueryResponse += f"\n> {perf['attributes']['title']}\n{perf['attributes']['description']}"
  
 
     await ctx.send(songQueryResponse)
