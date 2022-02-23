@@ -1,4 +1,6 @@
+from http import client
 import os
+from select import select
 import discord
 from dotenv import load_dotenv
 
@@ -20,7 +22,9 @@ GUILD = os.getenv('DISCORD_GUILD')
 intents = discord.Intents.default()
 intents.members = True
 
-bot = commands.Bot(command_prefix='$', intents=intents)
+bot = commands.Bot(command_prefix='.', intents=intents)
+
+owner = bot.get_user(442801889986347018)
 
 # We'll be issuing requests to our Planning Center account
 
@@ -37,6 +41,13 @@ idUpcomingSundays = []
 for x in d_getUpcomingSundays['data']:
     idUpcomingSundays.append(x['id'])
     upcomingSundayList.append(x['attributes']['dates'])
+
+def check_null(object, entry):
+    """Checks if the passed object is null, and filters it out."""
+    if object is not None:
+        return f"{entry}: {object}\n"
+    else:
+        pass
 
 print("Up and running")
 
@@ -161,7 +172,7 @@ async def sunday_team(ctx, date=upcomingSundayList[0]):
             response += "\n{}. {} - {}".format(i['index'], i['name'], i['team_position'])
 
 
-    response += "\n\nUse the $update-sunday-team command to confirm member availability."
+    response += "\n\nUse the .update-sunday-team command to confirm member availability."
 
     await ctx.send(response)
 
@@ -218,64 +229,131 @@ async def get_songs(ctx, date=upcomingSundayList[0]):
     await ctx.send(songQueryResponse)
 
 @bot.command(name="update-sunday-team")
-async def update_sunday_team(ctx, date, mid: int, status_code):
+async def update_sunday_team(ctx, mid: int, status_code, date=upcomingSundayList[0]):
     
-    for d in d_getUpcomingSundays['data']:
-        date1 = datetime.strptime(d['attributes']['dates'], "%d %B %Y")
-        date2 = datetime.strptime(date, "%b%d")
+    try:
+        for d in d_getUpcomingSundays['data']:
+            date1 = datetime.strptime(d['attributes']['dates'], "%d %B %Y")
+            if date == upcomingSundayList[0]:
+                date2 = datetime.strptime(date, "%d %B %Y")
+            else:
+                date2 = datetime.strptime(date, "%b%d")
+                
 
-        if date1.strftime("%b%d") == date2.strftime("%b%d"):
-            idSelectedSunday = d['id']
+            if date1.strftime("%b%d") == date2.strftime("%b%d"):
+                idSelectedSunday = d['id']
 
-    getSundayTeam = re.get('https://api.planningcenteronline.com/services/v2/service_types/1145804/plans/'+'56678239'+'/team_members', auth=HTTPBasicAuth(username, password)) # replace the id with idSelectedSunday
-    d_getSundayTeam = json.loads(getSundayTeam.text)
+        getSundayTeam = re.get('https://api.planningcenteronline.com/services/v2/service_types/1145804/plans/'+idSelectedSunday+'/team_members', auth=HTTPBasicAuth(username, password)) # replace the id with idSelectedSunday
+        d_getSundayTeam = json.loads(getSundayTeam.text)
 
-    teamMembers = []
+        teamMembers = []
 
-    for i in range(len(d_getSundayTeam['data'])):
-        teamMember = {
-            "index": i+1,
-            "pc_id": "",
-            "name": "",
-            "team_position": "",
-            "status": ""
+        for i in range(len(d_getSundayTeam['data'])):
+            teamMember = {
+                "index": i+1,
+                "pc_id": "",
+                "name": "",
+                "team_position": "",
+                "status": ""
 
-        }
+            }
 
-        teamMember['pc_id'] = d_getSundayTeam['data'][i]['id']
-        teamMember['name'] = d_getSundayTeam['data'][i]['attributes']['name']
-        teamMember['team_position'] = d_getSundayTeam['data'][i]['attributes']['team_position_name']
-        teamMember['status'] = d_getSundayTeam['data'][i]['attributes']['status']
+            teamMember['pc_id'] = d_getSundayTeam['data'][i]['id']
+            teamMember['name'] = d_getSundayTeam['data'][i]['attributes']['name']
+            teamMember['team_position'] = d_getSundayTeam['data'][i]['attributes']['team_position_name']
+            teamMember['status'] = d_getSundayTeam['data'][i]['attributes']['status']
 
-        teamMembers.append(teamMember)
+            teamMembers.append(teamMember)
 
-    for member in teamMembers:
-        if member['index'] == mid:
-            data = {}
-            data["id"] = member['pc_id']
-            data["attributes"] = {"status": status_code.upper()} # should really do some error handling here; CommandNotFound. MissingRequiredArgument
+        for member in teamMembers:
+            if member['index'] == mid:
+                data = {}
+                data["id"] = member['pc_id']
+                data["attributes"] = {"status": status_code.upper()} # should really do some error handling here; CommandNotFound. MissingRequiredArgument
 
-            updated_member = member['name']
+                updated_member = member
 
-            update = {"data": data}
+                update = {"data": data}
 
-            url = "https://api.planningcenteronline.com/services/v2/service_types/1145804/plans/{}/team_members/{}".format('56678239', member['pc_id']) # replace the id with idSelectedSunday
-            print(data)
-            print(url)
-            r = re.patch(url, json=update, auth=HTTPBasicAuth(username, password))
-            print(r.request.url)
-            print(r.request.body)
-            print(r.request.headers)
-            print(r.status_code)
-    await ctx.send(f"Status for {updated_member} updated.")
+                url = "https://api.planningcenteronline.com/services/v2/service_types/1145804/plans/{}/team_members/{}".format(idSelectedSunday, member['pc_id']) # replace the id with idSelectedSunday
+                print(data)
+                print(url)
+                r = re.patch(url, json=update, auth=HTTPBasicAuth(username, password))
+                # print(r.request.url)
+                # print(r.request.body)
+                # print(r.request.headers)
+                # print(r.status_code)
+
+        if status_code.upper() == "D":
+            full_status = "Declined"
+        elif status_code.upper() == "U":
+            full_status = "Unconfirmed"
+        elif status_code.upper() == "C":
+            full_status = "Confirmed"
+
+        await ctx.send(f"Status for {updated_member['name']} for {updated_member['team_position']} updated to {full_status}.\n\nHere is the updated team list for Sunday {date1.strftime('%d %B %Y')}")
+
+        await sunday_team(ctx, date)
+    except Exception as e:
+        
+        await owner.send(f"Error occured: {e}")
+
+@bot.command(name="get-arrangments")
+async def get_arrangments(ctx, song_name):
+    # get the song
+    getSong = re.get('https://api.planningcenteronline.com/services/v2/songs?per_page=100', auth=HTTPBasicAuth(username, password))
+    d_getSong = json.loads(getSong.text)
+
+    for song in d_getSong['data']:
+        if song_name == song['attributes']['title'].strip():
+            selected_song = song
+
+    getArrangements = re.get(f"https://api.planningcenteronline.com/services/v2/songs/{selected_song['id']}/arrangements", auth=HTTPBasicAuth(username, password))
+    d_getArrangements = json.loads(getArrangements.text)
+
+    # write a dict that contains the various entries for the arrangementResponse.
+    # If the entry is Null in the returned JSON (e.g Wo So has no ccli_number) then don't add the entry to arrangementResponse.
+    arrangementInfo = {
+        0: 'Title',
+        1: 'Last scheduled (during worship) on',
+        2: 'Songwriter(s)',
+        3: 'Copyright',
+        4: 'CCLI #',
+        5: 'BPM',
+        6: 'Meter',
+        7: 'Key',
+        9: 'Chord chart',
+        10: 'Attachments'
+    }
+
+    arrangementResponse = f"**Song information for {song_name}.**\n\n"
+    arrangementResponse += check_null(selected_song['attributes']['title'], arrangementInfo[0])
+    arrangementResponse += check_null(selected_song['attributes']['author'], arrangementInfo[2])
+    arrangementResponse += check_null(selected_song['attributes']['copyright'], arrangementInfo[3])
+    arrangementResponse += check_null(selected_song['attributes']['ccli_number'], arrangementInfo[4])
+    arrangementResponse += check_null(selected_song['attributes']['bpm'], arrangementInfo[5])
+    arrangementResponse += check_null(selected_song['attributes']['meter'], arrangementInfo[6])
+    arrangementResponse += check_null(selected_song['attributes']['chord_chart_key'], arrangementInfo[7])
+    arrangementResponse += check_null(selected_song['attributes']['last_scheduled_short_dates'], arrangementInfo[1])
+
+
+    # we can get the chord chart, which includes lyrics
+    # we can also get the audio for parts if they exist
+    # we can also get song info. Perhaps I'll put basic info like bpm, meter and key at the top, and have links to other files later.
 
 @update_sunday_team.error
 async def update_sunday_team_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
         await ctx.send("Make sure you put in all the parameters for this command. Send $help command-name-here to get help on a command.")
+    elif isinstance(error, commands.CommandNotFound):
+        await ctx.send(f"{error}; did you type out your command correctly?")
 
 @bot.event
 async def on_command_error(ctx, error):
-    await ctx.send(f"{error}; did you type out your command correctly?")
+    owner = bot.get_user(442801889986347018)
+    if owner is not None:
+        await owner.send(f"Command received: {ctx.message.content}\n Error: {error}")
+    await ctx.send(f"An error occurred. Help, {owner.mention}!")
+    
 
 bot.run(TOKEN)
