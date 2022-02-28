@@ -315,7 +315,7 @@ async def get_all_arrangments(ctx):
         for song in d_getAllSongs['data']:
             songList.append(song['attributes']['title'])
 
-    printedSongList = "> Here's the full list of songs in the Planning Center Services database:"
+    printedSongList = "> Here's the full list of songs in the Planning Center Services database:\n"
     for s in songList:
         printedSongList += f"{s}\n"
     
