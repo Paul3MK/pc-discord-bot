@@ -1,6 +1,8 @@
 from http import client
 import os
 from select import select
+# from termios import ECHOE
+from urllib.error import HTTPError
 import discord
 from dotenv import load_dotenv
 
@@ -11,7 +13,7 @@ from requests.auth import HTTPBasicAuth
 import json
 
 from datetime import datetime
-import attachments as at
+import attachment as at
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
@@ -74,7 +76,7 @@ async def on_member_join(member):
         f"H i {member.name}, welcome to my Discord server!"
     )
 
-@bot.command(name="roast", help="Use this to critique this bot!")
+@bot.command(name="roast", help="Use this command to critique me!")
 async def roast(ctx, *, roasting):
     async with ctx.typing():
         owner = bot.get_user(442801889986347018)
@@ -145,7 +147,7 @@ async def sunday_team(ctx, date=upcomingSundayList[0]):
             elif d_getNextSundayTeam['data'][i]['attributes']['status'] == 'D':
                 declinedTeamMembers.append(teamMember)
 
-        response = ""
+        response = f"**Current team status for Sunday {date2.strftime('%d %B')}:**\n"
 
         # print out confirmed team members
         response += "\n> Confirmed team members:"
@@ -176,7 +178,7 @@ async def sunday_team(ctx, date=upcomingSundayList[0]):
                 response += "\n{}. {} - {}".format(i['index'], i['name'], i['team_position'])
 
 
-        response += "\n\nUse the .update-sunday-team command to confirm member availability."
+        response += "\n\nUse the .update-sunday-team command to modify member availability."
 
         await ctx.send(response)
 
@@ -295,7 +297,7 @@ async def update_sunday_team(ctx, mid: int, status_code, date=upcomingSundayList
             elif status_code.upper() == "C":
                 full_status = "Confirmed"
 
-            await ctx.send(f"Status for {updated_member['name']} for {updated_member['team_position']} updated to {full_status}.\n\nHere is the updated team list for Sunday {date1.strftime('%d %B %Y')}")
+            await ctx.send(f"Status for {updated_member['name']} for {updated_member['team_position']} updated to {full_status}.\n\nHere is the updated team list for Sunday {date2.strftime('%d %B %Y')}")
 
             await sunday_team(ctx, date)
         except Exception as e:
@@ -326,7 +328,8 @@ async def get_arrangement(ctx, *, song_name):
         d_getSong = json.loads(getSong.text)
 
         for song in d_getSong['data']:
-            if song_name == song['attributes']['title'].strip():
+            temp = song['attributes']['title'].strip()
+            if song_name[0:9] == temp[0:9]:
                 selected_song = song
 
         getArrangements = re.get(f"https://api.planningcenteronline.com/services/v2/songs/{selected_song['id']}/arrangements?include=keys", auth=HTTPBasicAuth(username, password))
@@ -348,7 +351,7 @@ async def get_arrangement(ctx, *, song_name):
             10: 'Attachments'
         }
 
-        arrangementResponse = f"**Song information for {song_name}.**\n\n"
+        arrangementResponse = f"**Song information for {selected_song['attributes']['title']}.**\n\n"
         arrangementResponse += check_null(selected_song['attributes']['title'], arrangementInfo[0])
         arrangementResponse += check_null(d_getArrangements['data'][0]['attributes']['name'], arrangementInfo[8])
         arrangementResponse += check_null(selected_song['attributes']['author'], arrangementInfo[2])
@@ -379,6 +382,24 @@ async def get_arrangement(ctx, *, song_name):
     # we can get the chord chart, which includes lyrics
     # we can also get the audio for parts if they exist
     # we can also get song info. Perhaps I'll put basic info like bpm, meter and key at the top, and have links to other files later.
+
+@bot.command(name="get-mixes", help="Gets the band mixes for a given song.")
+async def get_mixes(ctx, *, song_name):
+    async with ctx.typing():
+        band_mixes = at.get_mixes(song_name[0:9])
+        mix_output = ""
+
+        if band_mixes is not HTTPError:
+            if type(band_mixes) is not str:
+                for mix in band_mixes:
+                    mix_output += f"{mix}\n"
+            else:
+                mix_output = "I couldn't find any band mixes for this song."
+        else:
+            mix_output = "An error occurred; Google Drive cannot be accessed at this time."
+
+        mix_output += "\nDone!"
+        await ctx.send(mix_output)
 
 # @update_sunday_team.error
 # async def update_sunday_team_error(ctx, error):
