@@ -27,7 +27,8 @@ GUILD = os.getenv('DISCORD_GUILD')
 intents = discord.Intents.default()
 intents.members = True
 
-bot = commands.Bot(command_prefix='.', intents=intents)
+activity = discord.Game(name=".help for commands.")
+bot = commands.Bot(command_prefix='.', intents=intents, activity=activity)
 
 owner = bot.get_user(442801889986347018)
 
@@ -211,7 +212,7 @@ async def get_songs(ctx, date=upcomingSundayList[0]):
                 sundaySongs.append(i)
         
         # respond to song query for a given Sunday
-        songQueryResponse = "{} songs will be played during worship on Sunday {}.\n> Worship".format(
+        songQueryResponse = "**Song Details**\n{} songs will be played during worship on Sunday {}.\n> Worship".format(
             len(sundaySongs),
             d_getNextSunday['data']['attributes']['dates'])
         for s in range(len(sundaySongs)):
@@ -315,7 +316,7 @@ async def get_all_arrangments(ctx):
         for song in d_getAllSongs['data']:
             songList.append(song['attributes']['title'])
 
-    printedSongList = "> Here's the full list of songs in the Planning Center Services database:"
+    printedSongList = "> Here's the full list of songs in the Planning Center Services database:\n"
     for s in songList:
         printedSongList += f"{s}\n"
     
