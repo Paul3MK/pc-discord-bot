@@ -387,19 +387,19 @@ async def get_arrangement(ctx, *, song_name):
 @bot.command(name="get-mixes", help="Gets the band mixes for a given song.")
 async def get_mixes(ctx, *, song_name):
     async with ctx.typing():
-        band_mixes = at.get_mixes(song_name[0:9])
-        mix_output = ""
+        # band_mixes = at.get_mixes(song_name[0:9])
+        mix_output = "Sorry, but this command has a few issues. Paul is currently working on a solution for this. Thanks for your patience."
 
-        if band_mixes is not HTTPError:
-            if type(band_mixes) is not str:
-                for mix in band_mixes:
-                    mix_output += f"{mix}\n"
-            else:
-                mix_output = "I couldn't find any band mixes for this song."
-        else:
-            mix_output = "An error occurred; Google Drive cannot be accessed at this time."
+        # if band_mixes is not HTTPError:
+        #     if type(band_mixes) is not str:
+        #         for mix in band_mixes:
+        #             mix_output += f"{mix}\n"
+        #     else:
+        #         mix_output = "I couldn't find any band mixes for this song."
+        # else:
+        #     mix_output = "An error occurred; Google Drive cannot be accessed at this time."
 
-        mix_output += "\nDone!"
+        # mix_output += "\nDone!"
         await ctx.send(mix_output)
 
 # @update_sunday_team.error
