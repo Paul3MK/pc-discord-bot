@@ -1,1 +1,1 @@
-web: python -m hopeBot
+worker: python -m hopeBot
